@@ -247,6 +247,11 @@ class DualCell {
       carouselIndicatorColor:  ciColor,
       carouselIndicatorHeight: ciHeight,
       flex: 1,
+      // ── Quiz 輸入欄 ──
+      isQuizInput:     el.hasAttribute("input-quiz"),
+      isQuizAnswer:    el.hasAttribute("answer-quiz"),
+      quizPlaceholder: a("quiz-placeholder") || "",
+      quizPairId:      a("quiz-pair") || null,
     };
   }
 
@@ -260,6 +265,7 @@ class DualCell {
       carouselItems:null, carouselInterval:null,
       carouselIndicator:null, carouselIndicatorColor:null, carouselIndicatorHeight:null,
       flex:1,
+      isQuizInput:false, isQuizAnswer:false, quizPlaceholder:'', quizPairId:null,
     };
   }
 
@@ -374,6 +380,31 @@ class DualCell {
       /* ── 列展開動畫（show-next / auto-reveal） ── */
       @keyframes dc-row-reveal{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
       #${id} .dc-reveal-row{animation:dc-row-reveal .35s ease forwards}
+      /* ── Quiz 輸入欄 ── */
+      #${id} .dc-quiz-input{
+        width:100%;background:transparent;border:none;outline:none;
+        color:${o.textColor};font-size:${o.fontSize};
+        font-family:inherit;line-height:1.6;
+        border-bottom:1px solid ${o.borderColor};
+        padding:2px 0;caret-color:${o.menuButtonColor};
+        transition:border-color .2s,color .2s}
+      #${id} .dc-quiz-input:focus{border-bottom-color:${o.menuButtonColor}}
+      #${id} .dc-quiz-input[readonly]{cursor:default}
+      #${id} .dc-quiz-input.quiz-correct{
+        color:#40c99a;border-bottom-color:#40c99a}
+      #${id} .dc-quiz-input.quiz-wrong{
+        color:#F08080;border-bottom-color:#F08080;
+        animation:dc-quiz-shake .4s ease}
+      @keyframes dc-quiz-shake{
+        0%,100%{transform:translateX(0)}
+        20%,60%{transform:translateX(-6px)}
+        40%,80%{transform:translateX(6px)}}
+      #${id} .dc-quiz-reset{
+        background:none;border:none;
+        color:${o.menuButtonColor};font-size:.9rem;
+        cursor:pointer;padding:0 0 0 8px;flex-shrink:0;
+        opacity:.6;transition:opacity .2s}
+      #${id} .dc-quiz-reset:hover{opacity:1}
     `;
     document.head.appendChild(style);
   }
@@ -541,6 +572,23 @@ class DualCell {
     contentDiv.className = 'dc-content';
     contentDiv.innerHTML = colData.content;
 
+    // ── Quiz 輸入欄：覆蓋 contentDiv 為輸入框模式 ──
+    if (colData.isQuizInput) {
+      contentDiv.innerHTML = '';
+      const inp = document.createElement('input');
+      inp.type        = 'text';
+      inp.className   = 'dc-quiz-input';
+      inp.placeholder = colData.quizPlaceholder;
+      inp.dataset.rowIdx = rowIdx;
+      inp.dataset.colIdx = colIdx;
+      // 存 pair id 以便事件委派找到對應答案欄
+      if (colData.quizPairId) inp.dataset.quizPairId = colData.quizPairId;
+      contentDiv.appendChild(inp);
+      cell.classList.add('has-quiz-input');
+      // 不顯示選單按鈕
+      colData.showMenu = false;
+    }
+
     if (this.options.menuButtonPosition === 'left') {
       if (this.options.showMenuButton && colData.showMenu)
         cell.appendChild(this.createMenuButton(colData, rowIdx, colIdx));
@@ -549,6 +597,11 @@ class DualCell {
       cell.appendChild(contentDiv);
       if (this.options.showMenuButton && colData.showMenu)
         cell.appendChild(this.createMenuButton(colData, rowIdx, colIdx));
+    }
+
+    // ── Quiz 答案欄標記 ──
+    if (colData.isQuizAnswer) {
+      cell.classList.add('has-quiz-answer');
     }
 
     // ── 兩層遮罩：layer2 先插入（底層），layer1 後插入（頂層）──
@@ -750,6 +803,116 @@ class DualCell {
       const tgt = document.getElementById(col.hoverTarget);
       if (src && tgt) tgt.innerHTML = src.innerHTML;
       // 刻意不掛 mouseout：離開後保留最後的內容，讓使用者可以繼續閱讀
+    });
+
+    // ── Quiz：監聽 keydown Enter ──
+    tableEl.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const inp = e.target;
+      if (!inp.classList.contains('dc-quiz-input')) return;
+      if (inp.readOnly) return;
+      e.preventDefault();
+      this._handleQuizSubmit(inp, tableEl);
+    });
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // Quiz 提交邏輯
+  // ════════════════════════════════════════════════════════════════
+
+  /**
+   * 處理 quiz 輸入框 Enter 事件：
+   * 1. 找到同列的答案欄（answer-quiz），揭開遮罩
+   * 2. 取答案欄 textContent 與輸入值比對（大小寫敏感）
+   * 3. 根據結果設定輸入框顏色，並鎖定輸入框
+   */
+  _handleQuizSubmit(inp, tableEl) {
+    const rowIdx  = parseInt(inp.dataset.rowIdx);
+    const colIdx  = parseInt(inp.dataset.colIdx);
+
+    // 找同列所有 cell
+    const rowEl   = tableEl.querySelector(`.dc-row[data-row-idx="${rowIdx}"]`);
+    if (!rowEl) return;
+    const cells   = Array.from(rowEl.querySelectorAll('.dc-cell'));
+
+    // 找答案欄：有 answer-quiz class 的 cell（在 createCell 時標記）
+    const answerCell = cells.find(c => c.classList.contains('has-quiz-answer'));
+    if (!answerCell) return;
+
+    // 先揭開遮罩（不管對錯）
+    const overlays = Array.from(answerCell.querySelectorAll('.dc-overlay'));
+    overlays.forEach(ov => ov.remove());
+    const ansContent = answerCell.querySelector('.dc-content');
+    if (ansContent) {
+      ansContent.classList.remove('blurred');
+      ansContent.classList.add('dc-revealed');
+      answerCell.classList.remove('has-overlay');
+    }
+
+    // 取答案文字（textContent 去頭尾空白）
+    const answer  = (ansContent?.textContent || '').trim();
+    const userVal = inp.value.trim();
+    const correct = userVal === answer;
+
+    // 設定輸入框狀態
+    inp.readOnly = true;
+    inp.classList.remove('quiz-correct', 'quiz-wrong');
+    // 強制 reflow 讓 shake 動畫重播
+    void inp.offsetWidth;
+    inp.classList.add(correct ? 'quiz-correct' : 'quiz-wrong');
+  }
+
+  /**
+   * 重設同列所有 quiz 欄位（清除輸入、恢復遮罩）
+   * 需要整列重建 — 呼叫外部 resetQuizRow(rowIdx)
+   */
+  resetQuizRow(rowIdx) {
+    const table = this.container.querySelector('.dc-table');
+    if (!table) return;
+    const rowEl = table.querySelector(`.dc-row[data-row-idx="${rowIdx}"]`);
+    if (!rowEl) return;
+
+    // 清空輸入欄
+    rowEl.querySelectorAll('.dc-quiz-input').forEach(inp => {
+      inp.value    = '';
+      inp.readOnly = false;
+      inp.classList.remove('quiz-correct', 'quiz-wrong');
+    });
+
+    // 找對應的 rowData 重建答案欄遮罩
+    // 走訪 this.rows 取得原始 colData
+    let cur = 0;
+    const findRow = (items) => {
+      for (const item of items) {
+        if (item.type === 'group') {
+          const found = findRow(item.rows);
+          if (found) return found;
+        } else {
+          if (cur === rowIdx) return item;
+          cur++;
+        }
+      }
+      return null;
+    };
+    const rowData = findRow(this.rows);
+    if (!rowData) return;
+
+    rowData.cols.forEach((colData, ci) => {
+      if (!colData.isQuizAnswer) return;
+      const cell    = rowEl.querySelector(`.dc-cell[data-col-idx="${ci}"]`);
+      const content = cell?.querySelector('.dc-content');
+      if (!cell || !content) return;
+
+      // 移除現有遮罩（若已被揭開）再重建
+      cell.querySelectorAll('.dc-overlay').forEach(o => o.remove());
+      content.classList.remove('dc-revealed');
+
+      if (colData.hasOverlay) {
+        cell.classList.add('has-overlay');
+        if (!colData.ovInvert) content.classList.add('blurred');
+        if (colData.ov2Text) cell.appendChild(this.createOverlayEl(colData.ov2Text, colData.ov2Color, colData.ovInvert, 2));
+        if (colData.ov1Text) cell.appendChild(this.createOverlayEl(colData.ov1Text, colData.ov1Color, colData.ovInvert, 1));
+      }
     });
   }
 

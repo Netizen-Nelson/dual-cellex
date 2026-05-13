@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>dual-cellex quiz 功能示範</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0c0d0c; --shell: #c6c7bd; --lavender: #C3A5E5;
+    --special: #C8DD5A; --sky: #08a9d1; --safe: #40c99a;
+    --info: #5fafed; --stone: #7090A8; --border: #222322;
+  }
+  html, body { min-height: 100vh; background: var(--bg); color: var(--shell);
+    font-family: 'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;
+    font-size: 18px; line-height: 1.8; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 40px 100px; }
+  h1 { font-size: 1.9rem; color: var(--lavender); margin-bottom: 6px; }
+  .subtitle { color: var(--stone); font-size: 1rem; margin-bottom: 48px; }
+  .section { margin-bottom: 52px; }
+  .section-title {
+    font-size: 1.05rem; font-weight: 700; color: var(--special);
+    border-left: 3px solid var(--special); padding-left: 12px;
+    margin-bottom: 18px; letter-spacing: 0.05em;
+  }
+  .desc-card {
+    background: #111211; border: 1px solid #252625; border-radius: 8px;
+    padding: 14px 18px; margin-bottom: 16px;
+    font-size: 0.92rem; color: #9a9b96; line-height: 1.9;
+  }
+  .desc-card code {
+    background: #1e201e; color: var(--sky);
+    padding: 1px 6px; border-radius: 4px;
+    font-family: 'Cascadia Code','Fira Code','Consolas',monospace; font-size: 0.85rem;
+  }
+  .reset-btn {
+    margin-top: 10px; padding: 5px 16px;
+    background: none; border: 1px solid var(--stone); border-radius: 4px;
+    color: var(--stone); font-size: 0.88rem; cursor: pointer;
+    transition: border-color .2s, color .2s;
+  }
+  .reset-btn:hover { border-color: var(--lavender); color: var(--lavender); }
+  hr { border: none; border-top: 1px solid var(--border); margin: 44px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>dual-cellex — Quiz 輸入功能</h1>
+  <p class="subtitle">左欄輸入框 × 右欄遮罩答案，按 ENTER 揭開並比對</p>
+
+  <!-- ══════════════════════════════════════
+       範例一：輸入在左，答案遮罩在右
+  ══════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">範例一：輸入在左，答案在右（預設）</div>
+    <div class="desc-card">
+      左欄為輸入框，右欄為遮罩答案欄。按 <code>ENTER</code> 後遮罩揭開，輸入框鎖定。<br>
+      答對顯示 <span style="color:#40c99a">綠色</span>，答錯顯示 <span style="color:#F08080">紅色</span> + 震動動畫。<br>
+      大小寫敏感比對。
+    </div>
+
+    <div id="quiz-left" data-dual-cell
+      data-theme="sky"
+      data-cols="2"
+      data-col-widths="1:1"
+      data-cell-min-height="48px">
+
+      <!-- 以下為純 HTML 方式示範，不依賴 PHP class -->
+
+      <dual-row>
+        <dual-col input-quiz quiz-placeholder="輸入藥物學名…"></dual-col>
+        <dual-col answer-quiz overlay-1-text="？" overlay-1-color="sky">Acetylsalicylic Acid</dual-col>
+      </dual-row>
+
+      <dual-row>
+        <dual-col input-quiz quiz-placeholder="輸入藥物學名…"></dual-col>
+        <dual-col answer-quiz overlay-1-text="？" overlay-1-color="sky">Amoxicillin</dual-col>
+      </dual-row>
+
+      <dual-row>
+        <dual-col input-quiz quiz-placeholder="輸入藥物學名…"></dual-col>
+        <dual-col answer-quiz overlay-1-text="？" overlay-1-color="sky">Metformin</dual-col>
+      </dual-row>
+
+      <dual-row>
+        <dual-col input-quiz quiz-placeholder="輸入藥物學名…"></dual-col>
+        <dual-col answer-quiz overlay-1-text="？" overlay-1-color="sky">Atorvastatin</dual-col>
+      </dual-row>
+
+    </div>
+
+    <button class="reset-btn" onclick="resetQuiz('quiz-left', 4)">
+      <i class="bi bi-arrow-counterclockwise"></i> 重設全部
+    </button>
+
+    <div class="desc-card" style="margin-top:14px">
+      HTML 寫法：<code>&lt;dual-col input-quiz quiz-placeholder="提示"&gt;&lt;/dual-col&gt;</code><br>
+      答案欄：<code>&lt;dual-col answer-quiz overlay-1-text="？" overlay-1-color="sky"&gt;答案&lt;/dual-col&gt;</code>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       範例二：答案在左，輸入在右（對調）
+  ══════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">範例二：答案在左，輸入在右（左右對調）</div>
+    <div class="desc-card">
+      左欄為遮罩答案欄，右欄為輸入框。只需交換欄的順序即可，邏輯完全相同。
+    </div>
+
+    <div id="quiz-right" data-dual-cell
+      data-theme="lavender"
+      data-cols="2"
+      data-col-widths="1:1"
+      data-cell-min-height="48px">
+
+      <dual-row>
+        <dual-col answer-quiz overlay-1-text="？" overlay-1-color="lavender">Python</dual-col>
+        <dual-col input-quiz quiz-placeholder="輸入程式語言名稱…"></dual-col>
+      </dual-row>
+
+      <dual-row>
+        <dual-col answer-quiz overlay-1-text="？" overlay-1-color="lavender">JavaScript</dual-col>
+        <dual-col input-quiz quiz-placeholder="輸入程式語言名稱…"></dual-col>
+      </dual-row>
+
+      <dual-row>
+        <dual-col answer-quiz overlay-1-text="？" overlay-1-color="lavender">TypeScript</dual-col>
+        <dual-col input-quiz quiz-placeholder="輸入程式語言名稱…"></dual-col>
+      </dual-row>
+
+    </div>
+
+    <button class="reset-btn" onclick="resetQuiz('quiz-right', 3)">
+      <i class="bi bi-arrow-counterclockwise"></i> 重設全部
+    </button>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       範例三：三欄（題目 + 輸入 + 答案）
+  ══════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">範例三：三欄模式（題目 ＋ 輸入 ＋ 答案）</div>
+    <div class="desc-card">
+      第一欄為靜態題目說明，第二欄為輸入框，第三欄為遮罩答案。<br>
+      <code>col-widths="2:2:1"</code> 控制欄寬比例。
+    </div>
+
+    <div id="quiz-three" data-dual-cell
+      data-theme="warning"
+      data-cols="3"
+      data-col-widths="2:2:1"
+      data-cell-min-height="48px">
+
+      <dual-row>
+        <dual-col show-menu="false">阿斯匹靈的藥物分類（英文）</dual-col>
+        <dual-col input-quiz quiz-placeholder="輸入分類名稱…"></dual-col>
+        <dual-col answer-quiz overlay-1-text="?" overlay-1-color="warning">NSAID</dual-col>
+      </dual-row>
+
+      <dual-row>
+        <dual-col show-menu="false">二甲雙胍的最大單次劑量（mg）</dual-col>
+        <dual-col input-quiz quiz-placeholder="輸入數字…"></dual-col>
+        <dual-col answer-quiz overlay-1-text="?" overlay-1-color="warning">1000</dual-col>
+      </dual-row>
+
+      <dual-row>
+        <dual-col show-menu="false">Penicillin 中文名稱</dual-col>
+        <dual-col input-quiz quiz-placeholder="輸入中文…"></dual-col>
+        <dual-col answer-quiz overlay-1-text="?" overlay-1-color="warning">盤尼西林</dual-col>
+      </dual-row>
+
+      <dual-row>
+        <dual-col show-menu="false">阿斯匹靈學名縮寫</dual-col>
+        <dual-col input-quiz quiz-placeholder="輸入縮寫…"></dual-col>
+        <dual-col answer-quiz overlay-1-text="?" overlay-1-color="warning">ASA</dual-col>
+      </dual-row>
+
+    </div>
+
+    <button class="reset-btn" onclick="resetQuiz('quiz-three', 4)">
+      <i class="bi bi-arrow-counterclockwise"></i> 重設全部
+    </button>
+
+    <div class="desc-card" style="margin-top:14px">
+      三欄模式：第一欄靜態題目（<code>show-menu="false"</code>），
+      第二欄 <code>input-quiz</code>，第三欄 <code>answer-quiz</code>。
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- ══════════════════════════════════════
+       PHP Class 寫法說明
+  ══════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">PHP Class 寫法（<code>DualCell::rowQuiz()</code>）</div>
+    <div class="desc-card">
+      以下為等效的 PHP Class 寫法，適合從資料庫動態產生測驗題：
+    </div>
+
+    <div id="quiz-php" data-dual-cell
+      data-theme="safe"
+      data-cols="2"
+      data-cell-min-height="48px">
+    </div>
+
+    <div class="desc-card" style="margin-top:14px">
+<pre style="background:#0e100e;padding:16px 18px;border-radius:6px;font-size:0.82rem;color:#c6c7bd;overflow-x:auto;line-height:1.75;font-family:'Cascadia Code','Consolas',monospace"><span style="color:#4a5a4a">// 輸入在左（預設）</span>
+<span style="color:#5fafed">DualCell</span>::<span style="color:#08a9d1">rowQuiz</span>(<span style="color:#40c99a">'輸入藥物學名…'</span>, <span style="color:#40c99a">'Metformin'</span>, [
+    <span style="color:#40c99a">'overlay_text'</span>  => <span style="color:#40c99a">'？'</span>,
+    <span style="color:#40c99a">'overlay_color'</span> => <span style="color:#40c99a">'safe'</span>,
+]);
+
+<span style="color:#4a5a4a">// 輸入在右</span>
+<span style="color:#5fafed">DualCell</span>::<span style="color:#08a9d1">rowQuiz</span>(<span style="color:#40c99a">'輸入答案…'</span>, <span style="color:#40c99a">'Aspirin'</span>, [
+    <span style="color:#40c99a">'input_side'</span>   => <span style="color:#40c99a">'right'</span>,
+    <span style="color:#40c99a">'overlay_text'</span> => <span style="color:#40c99a">'？'</span>,
+    <span style="color:#40c99a">'col_widths'</span>   => <span style="color:#40c99a">'1:1'</span>,
+]);
+
+<span style="color:#4a5a4a">// 從資料庫批次產生</span>
+<span style="color:#C3A5E5">$quiz_items</span> = <span style="color:#C3A5E5">$pdo</span>-><span style="color:#08a9d1">query</span>(<span style="color:#40c99a">"SELECT prompt, answer FROM quiz_drug"</span>)-><span style="color:#08a9d1">fetchAll</span>();
+<span style="color:#C8DD5A">foreach</span> (<span style="color:#C3A5E5">$quiz_items</span> <span style="color:#C8DD5A">as</span> <span style="color:#C3A5E5">$q</span>):
+    <span style="color:#C8DD5A">echo</span> <span style="color:#5fafed">DualCell</span>::<span style="color:#08a9d1">rowQuiz</span>(<span style="color:#C3A5E5">$q</span>[<span style="color:#40c99a">'prompt'</span>], <span style="color:#C3A5E5">$q</span>[<span style="color:#40c99a">'answer'</span>], [<span style="color:#40c99a">'overlay_color'</span> => <span style="color:#40c99a">'safe'</span>]);
+<span style="color:#C8DD5A">endforeach</span>;</pre>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// 重設指定容器的所有 quiz 列
+function resetQuiz(containerId, rowCount) {
+  const inst = document.getElementById(containerId)?.dualCellInstance;
+  if (!inst) return;
+  for (let i = 0; i < rowCount; i++) {
+    inst.resetQuizRow(i);
+  }
+}
+</script>
+
+<script src="dual-cellex.js"></script>
+</body>
+</html>

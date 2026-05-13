@@ -282,6 +282,51 @@ class DualCell
     }
 
     // ──────────────────────────────────────────────
+    //  Quiz 列
+    // ──────────────────────────────────────────────
+
+    /**
+     * Quiz 列：輸入框欄 + 遮罩答案欄，自動配對
+     * 大小寫敏感比對，ENTER 後一律揭開遮罩，輸入框立即鎖定
+     *
+     * @param string $prompt  輸入框的 placeholder 提示文字
+     * @param string $answer  正確答案（同時也是遮罩欄顯示內容）
+     * @param array  $options input_side(left|right), overlay_text, overlay_color,
+     *                        col_widths, row_opts
+     */
+    public static function rowQuiz(string $prompt, string $answer, array $options = []): string
+    {
+        $inputSide    = $options['input_side']    ?? 'left';
+        $overlayText  = $options['overlay_text']  ?? '？';
+        $overlayColor = $options['overlay_color'] ?? 'sky';
+        $rowOpts      = $options['row_opts']       ?? [];
+        if (!empty($options['col_widths'])) {
+            $rowOpts['col_widths'] = $options['col_widths'];
+        }
+
+        $safeAnswer = htmlspecialchars($answer, ENT_QUOTES, 'UTF-8');
+
+        $inputCol = self::col('', [
+            'quiz_input'       => true,
+            'quiz_placeholder' => $prompt,
+            'show_menu'        => false,
+        ]);
+
+        $answerCol = self::col($safeAnswer, [
+            'quiz_answer'     => true,
+            'overlay_1_text'  => $overlayText,
+            'overlay_1_color' => $overlayColor,
+            'show_menu'       => false,
+        ]);
+
+        $cols = $inputSide === 'left'
+            ? [$inputCol, $answerCol]
+            : [$answerCol, $inputCol];
+
+        return self::row($cols, $rowOpts);
+    }
+
+    // ──────────────────────────────────────────────
     //  Script 引入
     // ──────────────────────────────────────────────
 
@@ -392,6 +437,10 @@ class DualCell
         if (isset($o['carousel_indicator']))     $a .= ' carousel-indicator="' . ($o['carousel_indicator'] ? 'true' : 'false') . '"';
         if (!empty($o['carousel_indicator_color']))  $a .= " carousel-indicator-color=\"{$s($o['carousel_indicator_color'])}\"";
         if (!empty($o['carousel_indicator_height'])) $a .= " carousel-indicator-height=\"{$s($o['carousel_indicator_height'])}\"";
+        // quiz 欄位
+        if (!empty($o['quiz_input']))       $a .= ' input-quiz';
+        if (!empty($o['quiz_answer']))      $a .= ' answer-quiz';
+        if (isset($o['quiz_placeholder']))  $a .= " quiz-placeholder=\"{$s($o['quiz_placeholder'])}\"";
 
         return $a;
     }
